@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Security Checker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Link Security Checker</h1>
+        <p class="subtitle">Check for malicious attempts hidden in subscription links, GDPR buttons, etc.</p>
+        
+        <form method="POST" action="/">
+            <div class="input-group">
+                <input type="text" name="url" placeholder="Enter URL to check..." 
+                       value="{{ url if url else '' }}" required>
+                <button type="submit">Analyze</button>
+            </div>
+        </form>
+        
+        {% if report %}
+            <div class="result-container">
+                <h2>Analysis Results</h2>
+                
+                <div class="url-display {{ 'malicious' if report.is_malicious else 'safe' }}">
+                    <span class="status-badge">{{ 'Malicious' if report.is_malicious else 'Safe' }}</span>
+                    <span class="url">{{ report.url }}</span>
+                </div>
+                
+                {% if report.redirect_chain %}
+                    <div class="section">
+                        <h3>Redirect Chain</h3>
+                        <div class="redirect-chain">
+                            {% for redirect in report.redirect_chain %}
+                                <div class="redirect-item">
+                                    <span class="status-code">{{ redirect.status_code }}</span>
+                                    <span class="redirect-url">{{ redirect.url }}</span>
+                                </div>
+                            {% endfor %}
+                            <div class="redirect-item final">
+                                <span class="status-code">Final</span>
+                                <span class="redirect-url">{{ report.final_url }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                {% if report.warnings %}
+                    <div class="section warnings">
+                        <h3>Security Warnings</h3>
+                        <ul>
+                            {% for warning in report.warnings %}
+                                <li>{{ warning }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                {% if report.domain_info %}
+                    <div class="section">
+                        <h3>Domain Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="label">Domain:</span>
+                                <span class="value">{{ report.domain_info.domain }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Age:</span>
+                                <span class="value">
+                                    {% if report.domain_info.age_days %}
+                                        {{ report.domain_info.age_days }} days
+                                    {% else %}
+                                        Unknown
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Registrar:</span>
+                                <span class="value">{{ report.domain_info.registrar or 'Unknown' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">IP Address:</span>
+                                <span class="value">{{ report.domain_info.ip_address or 'Unknown' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                {% if report.parameters_analysis and report.parameters_analysis.parameters %}
+                    <div class="section">
+                        <h3>URL Parameters Analysis</h3>
+                        <div class="parameters-grid">
+                            {% for param, values in report.parameters_analysis.parameters.items() %}
+                                <div class="parameter-item">
+                                    <span class="param-name">{{ param }}</span>
+                                    <span class="param-values">
+                                        {% for value in values %}
+                                            <span class="param-value">{{ value }}</span>
+                                        {% endfor %}
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
